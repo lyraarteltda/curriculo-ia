@@ -7,11 +7,11 @@ Gerador de currículos personalizados com IA — cole a descrição da vaga e su
 - **Hosting**: Netlify
 - **Database**: Supabase (PostgreSQL + RLS)
 - **AI**: BYOK (Bring Your Own Key) — users provide their own API keys
-- **Community**: Maestria da IA (Circle)
+- **Community**: Maestros da IA (Circle)
 
 ## Access
 
-This tool is exclusive to paying members of Maestria da IA. Users must verify their membership with the email and WhatsApp number used at purchase.
+This tool is exclusive to paying members of Maestros da IA. Users must verify their membership with the email and WhatsApp number used at purchase.
 
 ## BYOK (Bring Your Own Key)
 
@@ -35,4 +35,4 @@ Open `http://localhost:3000` in your browser.
 
 ## Built by
 
-APP-BUILDER-01 — Autonomous Solution Builder for Maestria da IA
+APP-BUILDER-01 — Autonomous Solution Builder for Maestros da IA

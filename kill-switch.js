@@ -52,7 +52,7 @@ const KillSwitch = (function() {
       '<div style="font-size:48px;margin-bottom:24px;">🔧</div>' +
       '<h1 style="font-size:28px;font-weight:800;margin-bottom:16px;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Em Manutenção</h1>' +
       '<p style="color:#9ca3af;font-size:16px;line-height:1.6;margin-bottom:24px;">Estamos realizando melhorias nesta ferramenta. Ela estará de volta em breve.</p>' +
-      '<div style="display:inline-block;background:rgba(167,139,250,.12);color:#a78bfa;padding:8px 20px;border-radius:100px;font-size:13px;font-weight:600;border:1px solid rgba(167,139,250,.2);">Maestria da IA</div>' +
+      '<div style="display:inline-block;background:rgba(167,139,250,.12);color:#a78bfa;padding:8px 20px;border-radius:100px;font-size:13px;font-weight:600;border:1px solid rgba(167,139,250,.2);">Maestros da IA</div>' +
       '</div>';
     document.body.appendChild(overlay);
   }

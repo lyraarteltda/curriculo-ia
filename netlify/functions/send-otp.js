@@ -124,7 +124,7 @@ exports.handler = async function(event) {
 
   var zapiBody = JSON.stringify({
     phone: whatsappPhone,
-    message: '🔐 *Maestria da IA — Código de Verificação*\n\nSeu código: *' + code + '*\n\nEle expira em 10 minutos.\n\nSe você não solicitou este código, ignore esta mensagem.'
+    message: '🔐 *Maestros da IA — Código de Verificação*\n\nSeu código: *' + code + '*\n\nEle expira em 10 minutos.\n\nSe você não solicitou este código, ignore esta mensagem.'
   });
 
   try {
