@@ -316,6 +316,12 @@ const MembershipGate = (function() {
   };
 })();
 
+// Expose on window — rate-limiter.js, analytics.js and error-monitor.js
+// look up window.MembershipGate. A bare top-level `const` is NOT a window
+// property, so without this they silently fall back to anonymous/null
+// (global rate limiting instead of per-member, lost analytics attribution).
+window.MembershipGate = MembershipGate;
+
 document.addEventListener('DOMContentLoaded', function() {
   MembershipGate.init();
 });

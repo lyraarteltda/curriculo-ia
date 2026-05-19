@@ -458,14 +458,19 @@ const App = (function() {
 
   /* ---------- init ---------- */
 
-  function init() {
+  // Display state that must re-sync every time the app-screen is (re-)entered —
+  // e.g. a returning member who only configures their key after init() already ran.
+  function refresh() {
     var session = window.MembershipGate ? MembershipGate.getSession() : null;
     if (session) {
       var nameEl = $('user-name');
       if (nameEl) nameEl.textContent = (session.name || 'Maestro').split(' ')[0];
     }
-
     updateKeyWarning();
+  }
+
+  function init() {
+    refresh();
 
     var genBtn = $('generate-btn');
     if (genBtn) genBtn.addEventListener('click', generate);
@@ -494,17 +499,20 @@ const App = (function() {
     if (modalSave) modalSave.addEventListener('click', function() { setTimeout(updateKeyWarning, 50); });
   }
 
-  return { init: init };
+  return { init: init, refresh: refresh };
 })();
 
 (function() {
   var _appInitialized = false;
   function tryAppInit() {
-    if (_appInitialized) return;
     var session = MembershipGate.getSession();
-    if (session) {
+    if (!session) return;
+    if (!_appInitialized) {
       _appInitialized = true;
       App.init();
+    } else {
+      // already wired — just re-sync display state (key warning, name)
+      App.refresh();
     }
   }
   document.addEventListener('maestria:app-ready', tryAppInit);
