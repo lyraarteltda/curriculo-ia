@@ -1,8 +1,14 @@
 /**
- * Membership Gate — BACKEND-ONLY verification.
- * All membership checks go through server-side Netlify functions.
- * The client NEVER queries comunidade_purchases directly.
- * localStorage is a display cache only — every page load revalidates server-side.
+ * Membership Gate — BACKEND-ONLY verification, single step.
+ *
+ * The member types their e-mail and WhatsApp number. The backend
+ * verify-membership function looks them up in comunidade_purchases and
+ * grants access when the e-mail OR the WhatsApp is registered with a
+ * payment_status that is NOT cancelled or refunded.
+ *
+ * There is NO OTP / verification-code step. The client NEVER decides
+ * access — it only reflects what the backend returned. localStorage is a
+ * display cache; every page load revalidates against the backend.
  */
 const MembershipGate = (function() {
   const SESSION_KEY = 'maestria_member_session';
@@ -10,10 +16,7 @@ const MembershipGate = (function() {
 
   const LOGIN_RATE_KEY = 'maestria_login_attempts';
   const LOGIN_RATE_WINDOW = 15 * 60 * 1000;
-  const LOGIN_RATE_MAX = 5;
-
-  let _pendingEmail = '';
-  let _pendingPhone = '';
+  const LOGIN_RATE_MAX = 8;
 
   function getStoredSession() {
     try {
@@ -45,7 +48,7 @@ const MembershipGate = (function() {
   }
 
   function normalizePhone(phone) {
-    return phone.replace(/\D/g, '');
+    return (phone || '').replace(/\D/g, '');
   }
 
   function checkLoginRateLimit() {
@@ -75,7 +78,7 @@ const MembershipGate = (function() {
       var resp = await fetch('/.netlify/functions/verify-membership', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email, phone: phone || undefined })
+        body: JSON.stringify({ email: email || undefined, phone: phone || undefined })
       });
       return await resp.json();
     } catch {
@@ -87,7 +90,7 @@ const MembershipGate = (function() {
     const session = getStoredSession();
     if (!session) return false;
 
-    var result = await verifyMembershipBackend(session.email);
+    var result = await verifyMembershipBackend(session.email, session.phone);
 
     if (!result.verified) {
       clearSession();
@@ -97,32 +100,6 @@ const MembershipGate = (function() {
 
     storeSession(result.member);
     return true;
-  }
-
-  async function sendOTP(email, phone) {
-    try {
-      var resp = await fetch('/.netlify/functions/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email, phone: phone })
-      });
-      return await resp.json();
-    } catch {
-      return { sent: false, error: 'Erro de conexão. Tente novamente.' };
-    }
-  }
-
-  async function verifyOTP(email, code) {
-    try {
-      var resp = await fetch('/.netlify/functions/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email, code: code })
-      });
-      return await resp.json();
-    } catch {
-      return { verified: false, error: 'Erro de conexão. Tente novamente.' };
-    }
   }
 
   function showScreen(screenId) {
@@ -137,77 +114,45 @@ const MembershipGate = (function() {
   function getErrorMessage(reason) {
     switch (reason) {
       case 'not_found':
-        return 'E-mail não encontrado entre os membros aprovados. Verifique se usou o mesmo e-mail da compra.';
-      case 'phone_mismatch':
-        return 'O WhatsApp informado não corresponde ao cadastro. Verifique o número.';
+        return 'E-mail e WhatsApp não encontrados entre os membros da comunidade. Use os mesmos dados cadastrados na compra.';
+      case 'inactive':
+        return 'Seu acesso consta como cancelado ou reembolsado. Se isso estiver incorreto, fale com o suporte.';
       case 'rate_limited':
         return 'Muitas tentativas. Aguarde 15 minutos antes de tentar novamente.';
       case 'error':
-        return 'Erro ao verificar. Tente novamente em alguns segundos.';
+        return 'Erro ao verificar o acesso. Tente novamente em alguns segundos.';
       default:
         return 'Não foi possível verificar o acesso. Tente novamente.';
     }
   }
 
-  function createOTPScreen() {
-    if (document.getElementById('otp-screen')) return;
+  async function handleGateSubmit(e) {
+    e.preventDefault();
 
-    var screen = document.createElement('div');
-    screen.id = 'otp-screen';
-    screen.className = 'screen';
-    screen.innerHTML =
-      '<div class="gate-container" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">' +
-        '<div style="width:100%;max-width:420px;text-align:center;">' +
-          '<div class="gate-header">' +
-            '<h1 class="gradient-text">Verificação por WhatsApp</h1>' +
-            '<p class="subtitle">Enviamos um código de 6 dígitos para o seu WhatsApp. Digite-o abaixo.</p>' +
-          '</div>' +
-          '<div class="gate-form" style="margin-bottom:24px;">' +
-            '<div class="form-group">' +
-              '<label for="otp-code">Código de verificação</label>' +
-              '<input type="text" id="otp-code" placeholder="000000" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" style="text-align:center;font-size:24px;letter-spacing:8px;">' +
-            '</div>' +
-            '<button type="button" id="otp-submit" class="btn-primary">' +
-              '<span class="btn-text">Verificar código</span>' +
-              '<span class="btn-loading" style="display:none;">Verificando...</span>' +
-            '</button>' +
-            '<p id="otp-error" class="error-message" style="display:none;"></p>' +
-          '</div>' +
-          '<p class="gate-footer"><a href="#" id="otp-back">Voltar e tentar novamente</a></p>' +
-        '</div>' +
-      '</div>';
+    var emailInput = document.getElementById('gate-email');
+    var phoneInput = document.getElementById('gate-phone');
+    var submitBtn = document.getElementById('gate-submit');
+    var errorEl = document.getElementById('gate-error');
+    var btnText = submitBtn.querySelector('.btn-text');
+    var btnLoading = submitBtn.querySelector('.btn-loading');
 
-    document.body.appendChild(screen);
-
-    document.getElementById('otp-submit').addEventListener('click', handleOTPSubmit);
-    document.getElementById('otp-code').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') handleOTPSubmit();
-    });
-    document.getElementById('otp-back').addEventListener('click', function(e) {
-      e.preventDefault();
-      showScreen('gate-screen');
-    });
-  }
-
-  async function handleOTPSubmit() {
-    var codeInput = document.getElementById('otp-code');
-    var submitBtn = document.getElementById('otp-submit');
-    var errorEl = document.getElementById('otp-error');
-    var code = codeInput.value.trim();
-
-    if (code.length !== 6) {
-      errorEl.textContent = 'Digite o código de 6 dígitos.';
+    if (!checkLoginRateLimit()) {
+      errorEl.textContent = getErrorMessage('rate_limited');
       errorEl.style.display = 'block';
       return;
     }
 
+    recordLoginAttempt();
     errorEl.style.display = 'none';
     submitBtn.disabled = true;
-    submitBtn.querySelector('.btn-text').style.display = 'none';
-    submitBtn.querySelector('.btn-loading').style.display = 'inline';
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline';
 
     try {
-      var result = await verifyOTP(_pendingEmail, code);
+      var email = emailInput.value.toLowerCase().trim();
+      var phone = normalizePhone(phoneInput.value);
+
+      var result = await verifyMembershipBackend(email, phone);
 
       if (result.verified && result.member) {
         storeSession(result.member);
@@ -216,16 +161,16 @@ const MembershipGate = (function() {
         showScreen('key-screen');
         if (window.ApiKeyManager) window.ApiKeyManager.renderInputs();
       } else {
-        errorEl.textContent = result.error || 'Código inválido. Tente novamente.';
+        errorEl.textContent = getErrorMessage(result.reason);
         errorEl.style.display = 'block';
       }
-    } catch {
-      errorEl.textContent = 'Erro de conexão. Tente novamente.';
+    } catch (err) {
+      errorEl.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
       errorEl.style.display = 'block';
     } finally {
       submitBtn.disabled = false;
-      submitBtn.querySelector('.btn-text').style.display = 'inline';
-      submitBtn.querySelector('.btn-loading').style.display = 'none';
+      btnText.style.display = 'inline';
+      btnLoading.style.display = 'none';
     }
   }
 
@@ -247,56 +192,9 @@ const MembershipGate = (function() {
     }
 
     showScreen('gate-screen');
-    createOTPScreen();
 
     var form = document.getElementById('gate-form');
-    if (!form) return;
-
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
-
-      var emailInput = document.getElementById('gate-email');
-      var phoneInput = document.getElementById('gate-phone');
-      var submitBtn = document.getElementById('gate-submit');
-      var errorEl = document.getElementById('gate-error');
-      var btnText = submitBtn.querySelector('.btn-text');
-      var btnLoading = submitBtn.querySelector('.btn-loading');
-
-      if (!checkLoginRateLimit()) {
-        errorEl.textContent = getErrorMessage('rate_limited');
-        errorEl.style.display = 'block';
-        return;
-      }
-
-      recordLoginAttempt();
-      errorEl.style.display = 'none';
-      submitBtn.disabled = true;
-      btnText.style.display = 'none';
-      btnLoading.style.display = 'inline';
-
-      try {
-        _pendingEmail = emailInput.value.toLowerCase().trim();
-        _pendingPhone = normalizePhone(phoneInput.value);
-
-        var otpResult = await sendOTP(_pendingEmail, _pendingPhone);
-
-        if (otpResult.sent) {
-          showScreen('otp-screen');
-          var otpInput = document.getElementById('otp-code');
-          if (otpInput) { otpInput.value = ''; otpInput.focus(); }
-        } else {
-          errorEl.textContent = otpResult.error || 'Erro ao enviar código. Tente novamente.';
-          errorEl.style.display = 'block';
-        }
-      } catch (err) {
-        errorEl.textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
-        errorEl.style.display = 'block';
-      } finally {
-        submitBtn.disabled = false;
-        btnText.style.display = 'inline';
-        btnLoading.style.display = 'none';
-      }
-    });
+    if (form) form.addEventListener('submit', handleGateSubmit);
 
     var logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {

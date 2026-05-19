@@ -40,17 +40,16 @@
     <h2>1. Dados Coletados</h2>
     <p>Coletamos apenas os dados estritamente necessários para o funcionamento da ferramenta:</p>
     <ul>
-      <li><strong>E-mail:</strong> para verificação de membros aprovados.</li>
-      <li><strong>Telefone (WhatsApp):</strong> para verificação de identidade e envio de código OTP.</li>
+      <li><strong>E-mail:</strong> para verificação de acesso à comunidade.</li>
+      <li><strong>Telefone (WhatsApp):</strong> para verificação de acesso à comunidade.</li>
       <li><strong>Eventos de uso:</strong> ações anônimas dentro da ferramenta (ex.: aberturas, cliques) para melhoria contínua.</li>
     </ul>
     <p>Chaves de API de terceiros (OpenAI, Anthropic, etc.) são armazenadas <strong>apenas no navegador do usuário</strong> (localStorage) e nunca são transmitidas para nossos servidores.</p>
 
     <h2>2. Finalidade do Tratamento</h2>
     <ul>
-      <li><strong>Verificação de acesso:</strong> confirmar que o usuário é membro aprovado da comunidade.</li>
+      <li><strong>Verificação de acesso:</strong> confirmar que o usuário é membro ativo da comunidade.</li>
       <li><strong>Melhoria da ferramenta:</strong> analytics anônimos para entender padrões de uso.</li>
-      <li><strong>Comunicação:</strong> envio de código OTP via WhatsApp para autenticação.</li>
     </ul>
 
     <h2>3. Base Legal</h2>
@@ -61,13 +60,12 @@
     <ul>
       <li><strong>Supabase:</strong> banco de dados para verificação de membros (hospedado na AWS, dados criptografados em trânsito e em repouso).</li>
       <li><strong>Netlify:</strong> hospedagem da aplicação web.</li>
-      <li><strong>Z-API:</strong> envio de mensagens WhatsApp para autenticação OTP.</li>
+      <li><strong>Z-API:</strong> envio de mensagens WhatsApp à equipe quando o usuário envia feedback pela ferramenta.</li>
     </ul>
 
     <h2>5. Período de Retenção</h2>
     <ul>
       <li><strong>Dados de verificação:</strong> mantidos enquanto o usuário for membro ativo da comunidade.</li>
-      <li><strong>Códigos OTP:</strong> expiram em 10 minutos e são limpos automaticamente.</li>
       <li><strong>Eventos de uso:</strong> mantidos por até 12 meses.</li>
     </ul>
 
