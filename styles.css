@@ -807,9 +807,7 @@ body {
 .rd-edu { margin-bottom: var(--space-sm); }
 .rd-edu:last-child { margin-bottom: 0; }
 .rd-edu-course { font-size: 14.5px; font-weight: 600; color: var(--text); display: block; }
-.rd-edu-inst { font-size: 13.5px; color: var(--text-muted); }
-.rd-edu-period { font-size: 12.5px; color: var(--text-dim); }
-.rd-edu-inst::after { content: " · "; color: var(--text-dim); }
+.rd-edu-meta { font-size: 13px; color: var(--text-muted); }
 
 /* ATS + tips blocks */
 .ats-block,
@@ -900,7 +898,7 @@ body {
   }
   .rd-h { color: #000; border-color: #999; }
   .rd-summary, .rd-job-role, .rd-edu-course { color: #000; }
-  .rd-bullets li, .rd-job-period, .rd-edu-inst, .rd-edu-period { color: #333; }
+  .rd-bullets li, .rd-job-period, .rd-edu-meta { color: #333; }
   .rd-job-company { color: #444; }
   .rd-skill {
     background: #f0f0f0;

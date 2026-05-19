@@ -245,8 +245,8 @@ const App = (function() {
       forms.forEach(function(f) {
         html += '<div class="rd-edu">';
         html += '<span class="rd-edu-course">' + esc(f.curso || '') + '</span>';
-        if (f.instituicao) html += '<span class="rd-edu-inst">' + esc(f.instituicao) + '</span>';
-        if (f.periodo) html += '<span class="rd-edu-period">' + esc(f.periodo) + '</span>';
+        var meta = [f.instituicao, f.periodo].filter(Boolean).map(esc).join(' · ');
+        if (meta) html += '<span class="rd-edu-meta">' + meta + '</span>';
         html += '</div>';
       });
       html += '</section>';
